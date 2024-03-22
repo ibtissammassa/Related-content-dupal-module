@@ -1,0 +1,8 @@
+name: 'Related Content'
+type: module
+core_version_requirement: ^10
+description: 'related content block (by taxonomy)'
+package: 'Related Content'
+
+dependencies:
+  - drupal:block
