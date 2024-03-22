@@ -27,13 +27,8 @@
      * {@inheritdoc}
      */
     public function build() {
-      // Get the current node
-      $node = \Drupal::routeMatch()->getParameter('node');
-  
-      $related_content = [];
-  
-      // Check if the current page is a node
-    if ($node && $node instanceof \Drupal\node\NodeInterface && $node->getType()=='event') {
+        $node = \Drupal::routeMatch()->getParameter('node');
+        $related_content = [];
         $content_type = $node->getType();
         $taxonomy_field_name = 'field_event_category';
   
@@ -57,24 +52,42 @@
   
         // Load the related nodes
         $related_content = \Drupal\node\Entity\Node::loadMultiple($related_node_nids);
-      }
   
       // Render
       $build = [];
       if (!empty($related_content)) {
-        foreach ($related_content as $related_node) {
-          $build[] = [
-            '#theme' => 'node',
-            '#node' => $related_node,
-            '#view_mode' => 'teaser',
-          ];
+        // foreach ($related_content as $related_node) {
+        //   $build[] = [
+        //     '#theme' => 'node',
+        //     '#node' => $related_node,
+        //     '#view_mode' => 'teaser',
+        //   ];
+        // }
+        $entity_type_manager = \Drupal::entityTypeManager();
+        $node_view_builder = $entity_type_manager->getViewBuilder('node');
+        $view_mode = 'teaser';
+        $content = $node_view_builder->viewMultiple($related_content, $view_mode);
+        // Render the nodes using a custom Twig template
+        $build = [
+            '#theme' => 'related',
+            '#nodes' => $content,
+        ];
+        return $build;	
         }
-      }
-      else {
-        $build['#markup'] = $this->t('No related content found.');
-      }
-  
-      return $build;
+    return ['#markup' => $this->t('No related content found.')];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function blockAccess(AccountInterface $account){
+        // If viewing a node
+        $node = \Drupal::routeMatch()->getParameter('node');
+
+        if (!(is_null($node)) AND $node->getType()=='event') {
+            return AccessResult::allowedIfHasPermission($account,'view related content');
+        }
+        return AccessResult::forbidden();                       
     }
   
   }
